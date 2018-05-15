@@ -2,33 +2,36 @@
 
 class girl():
     face = [('''
-            $$$&$$
-           $$||||$$
-           $ .  . $
-           $   `  $
-            \\  = /
-             |--|
-          __/    \\__
+             $$$&$$
+            $$||||$$
+            $ .  . $
+            $   `  $
+             \\  = /
+              |--|
+           __/    \\__
     ___________________________
     '''),
 
     ('''
-            $$$&$$
-           $$||||$$
-           $ _  _ $
-           $   `  $
-            \\  = /
-             |--|
-          __/    \\__
+             $$$&$$
+            $$||||$$
+            $ _  _ $
+            $   `  $
+             \\  = /
+              |--|
+           __/    \\__
     ___________________________
     ''')]
 
     
 
-    messages = ['Ooh Honey, look at you- you\'re filthy!',
-                'I\'m sure I could have you cleaned up in no time-',
-                'Hey, wait, you\'re that punk from next door, aren\'t you?',
-                'Get the hell outta here before I call the police!']
+    messages = ['Hey You, Kid! Hey!',
+                'There\'s a snake next door!',
+                'You look tough, think you could kill it?',
+                'I\'ll give you some gold!']
+    messages2 = ['Have you killed the snake yet?',
+                 'Well come back when you have!']
+    messages3 = ['Hey thanks for killing that snake!']
 
 
 class man():
@@ -113,3 +116,30 @@ class snakeMan():
     messages = ['You fool! You\'ve come to the Viper!',
                 'Prepare to die in Combat!',
                 'HISSSSSSSSS']
+
+
+class shopkeeper():
+    face = [('''
+             $$$$$$$$$
+            $$$$$$$$$$$
+           $| ... ... |$
+           C|  O   O  |D
+           $|.    |  .|$
+          $$|..  -  ..|$$
+             \\......./
+    ___________________________
+    '''),
+    ('''
+             $$$$$$$$$
+            $$$$$$$$$$$
+           $| ... ... |$
+           C|  -   -  |D
+           $|.    |  .|$
+          $$|..  -  ..|$$
+             \\......./
+    ___________________________
+    ''')]
+
+    messages = ['Hey there traveller!', 'What can I do for you?']
+
+#
