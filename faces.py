@@ -142,4 +142,87 @@ class shopkeeper():
 
     messages = ['Hey there traveller!', 'What can I do for you?']
 
-#
+
+class anne():
+    face = [('''
+             $$$&$$
+            $$||||$$
+            $ .  . $
+           $$   |  $$
+           $$\\  - /$$
+             $|--|$
+           __/    \\__
+    ___________________________
+    '''),
+
+    ('''
+             $$$&$$
+            $$||||$$
+            $ -  - $
+           $$   |  $$
+           $$\\  - /$$
+             $|--|$
+           __/    \\__
+    ___________________________
+    ''')]
+
+    
+
+    messages = ['Hey, need an aly?', 'I\'ll help you fight if you need.',
+                'Just say the word, and I\'ll be there to aid you.']
+
+
+class wizard():
+    face = [('''
+            /------\\
+        ___/_______\\___
+            $$$$$$$$
+            $ .  . $
+           $$   |  $$
+           $$$$$$$$$$
+             $$$$$$
+           __/$$$$\\__
+    ___________________________
+    '''),
+
+    ('''
+            /------\\
+        ___/_______\\___
+            $$$$$$$$
+            $ -  - $
+           $$   |  $$
+           $$$$$$$$$$
+             $$$$$$
+           __/$$$$\\__
+    ___________________________
+    ''')]
+
+    messages = ['Hello, traveler.',
+                'Need the assistance of a wizard?',
+                'I\'m quite adept at sorcery and healing!']
+
+
+class tank():
+    face = [('''
+            |^^^^^^^^^|
+            | ... ... |
+           C|  O   O  |D
+            |.    \  .|
+            |../===\\..|
+            |.........|
+    ___________________________
+    '''),
+    ('''
+            |^^^^^^^^^|
+            | ... ... |
+           C|  -   -  |D
+            |.    \  .|
+            |../===\\..|
+            |.........|
+    ___________________________
+    ''')
+        ]
+
+    messages = ['Ho, looking for might?',
+                'Let me take arms with you, adventurer!',
+                'Come, we have many to crush!']
