@@ -1,14 +1,17 @@
-# game.py - simple game test
+# game.py - AmEn1 demo
 
-### CH LOG:
-###  - IN Iventory screen, make map and make map acquisition in game
+### TODO:
+### - try and put map() calls in another file so that this file is purely functional
 
+### - work out either companion ai following, or have companion just on each map somewhere
+### wtf is that ai on ln375 lol figure it out or get rid of it
+
+### - make alternate messages if companion is True and you try and talk to them
 
 import sys, os, textwrap, random, time, ast
 import msvcrt as getch
 from random import randint
 import faces, maps
-
 
 def cls():
     os.system('CLS')
@@ -16,12 +19,16 @@ def cls():
 
 class states():
     lvlState = 0
-    pl_hp = 15
+    pl_hp = 30
     gold = 200
-    spellList = {'Fireball':2, 'Healing':1, 'ThunderStrike':1}
-    shop_items = {'Sword dam +2':15, 'Minor Amulet':30, 'Magicka +1':10}
+    spellList = {'Healing':1, 'Fireball':2, 'ThunderStrike':1}
+    shop_items = {'Sword dam +1':15, 'Minor Amulet':30, 'Magicka +1':10}
     magicka = 18
     swordDam = 2
+
+    companion = ''
+    comp_abList = {}
+    comp_char = ''
     
     currentEnemy= ''
     enemyHp = 0
@@ -82,21 +89,25 @@ class mapPos():
     x = 1
     y = 1
 
+    compx = 2
+    compy = 1
+
     walkables = ['.', ' ']
-    walls = ['|', '#', 'M', '^', '_',  '-', 'Q', '@']
+    walls = ['|', '#', 'M', '^', '_',  '-', 'Q', '@', 'A', 'W', 'T']
 
 
 def inventory():
     cls()
-    print('\n    --INVENTORY:\n    [1] Charge Spells\n    [2] Stats\n\n    [3] Back')
+    print('\n    --INVENTORY:\n    [1] Charge Spells\n    [2] Stats\n    [3] Map\n\n    [4] Back')
     opt = getch.getch() ; choice = bytes.decode(opt)
-    if choice == '3':
+    if choice == '4':
         menu()
     elif choice == '1':
         charge_spells()
     elif choice == '2':
         cls()
         print('\n    --STATS:')
+        print('    COMP:      '+states.companion)
         print('    HP:        '+str(states.pl_hp))
         print('    Gold:      '+str(states.gold))
         print('    Magicka:   '+str(states.magicka))
@@ -106,11 +117,20 @@ def inventory():
             print('      -'+key+' ('+str(value)+')')
         input('\n    [enter]')
         inventory()
+    elif choice == '3':
+        cls()
+        print('\n    --MAP')
+        for i in range(len(maps.worldMap.wMap)):
+            print('\n    ', end ='')
+            for j in range(len(maps.worldMap.wMap[0])):
+                print(maps.worldMap.wMap[i][j], end='')
+        input()
+        inventory()
     else:
         inventory()
         
 
-def charge_spells():
+def charge_spells(): # take some args
     cls()
     magicka = states.magicka
     spells = states.spellList
@@ -124,83 +144,157 @@ def charge_spells():
         print(('-'+spellCosts[i-1]+' mg').rjust(7, ' '))
         itemList.append(key)
         i +=1
-    print('\n    ['+str(i)+'] Back' + ('MAGICKA: '+str(magicka)).rjust(19, ' ')
-)
+    print('\n    ['+str(i)+'] Back' + ('MAGICKA: '+str(magicka)).rjust(19, ' '))
     # Player Input
     magChar = getch.getch()
     choice = bytes.decode(magChar)
     try:
         if choice == str(i):
-            pass
+            menu()
         elif choice == '0':
             charge_spells()
         else:
-            # FIREBALL
-            if itemList[int(choice)-1] == 'Fireball':
-                if magicka < 2:
-                    print('\n    # NOT ENOUGH MAGICKA #')
-                    input()
-                    charge_spells()
-                else:
-                    print('\n    -Fireball Charged +1')
-                    states.magicka -= 2
-                    states.spellList['Fireball'] += 1
-                    input()
-                    charge_spells()
-            # HEALING
-            if itemList[int(choice)-1] == 'Healing':
-                if magicka < 1:
-                    print('\n    # NOT ENOUGH MAGICKA #')
-                    input()
-                    charge_spells()
-                else:
-                    print('\n    -Healing Charged +1')
-                    states.magicka -= 1
-                    states.spellList['Healing']+=1
-                    input()
-                    charge_spells()
-            # THUNDER STRIKE
-            if itemList[int(choice)-1] == 'ThunderStrike':
-                if magicka < 4:
-                    print('\n    # NOT ENOUGH MAGICKA #')
-                    input()
-                    charge_spells()
-                else:
-                    print('\n    -ThunderStrike Charged +1')
-                    states.magicka -= 4
-                    states.spellList['ThunderStrike'] +=1
-                    input()
-                    charge_spells()
-            # MINOR AMULET
-            if itemList[int(choice)-1] == 'Minor Amulet':
-                if magicka < 3:
-                    print('\n    # NOT ENOUGH MAGICKA #')
-                    input()
-                    charge_spells()
-                else:
-                    print('\n    -Minor Amulet Charged +1')
-                    states.magicka -= 3
-                    states.spellList['Minor Amulet'] +=1
-                    input()
-                    charge_spells()
+            if magicka < int(spellCosts[int(choice)-1]):
+                print('\n    # NOT ENOUGH MAGICKA #')
+                input()
+                charge_spells()
+            else:
+                print('\n    -'+itemList[int(choice)-1]+' Charged +1')
+                states.magicka -= int(spellCosts[int(choice)-1])
+                states.spellList[itemList[int(choice)-1]] +=1
+                input()
+                charge_spells()
                     
     except (ValueError,IndexError):
         charge_spells()
 
+
+class comp_Anne():
+
+    def healing():
+        hp = randint(2, 5)
+        states.pl_hp += hp
+        print(f"    HP: {states.pl_hp}      {states.currentEnemy}: {states.enemyHp}")
+        print(f'\n    Anne heals you +{hp} HP')
+
+    def magicka():
+        spellList = []
+        for key, value in states.spellList.items():
+            spellList.append(key)
+        spell = random.choice(spellList)
+        states.spellList[spell] += 1
+        print(f"    HP: {states.pl_hp}      {states.currentEnemy}: {states.enemyHp}")
+        print(f'\n    Anne charges your {spell} +1!')
+
+    def choice():
+        abilities = [comp_Anne.healing, comp_Anne.magicka]
+        random.choice(abilities)()
+        
+
+class comp_Tank():
+
+    def strike():
+        hp = randint(states.swordDam,(states.swordDam+5))
+        states.enemyHp -= hp
+        if states.enemyHp < 0:
+            states.enemyHp = 0
+        print(f"    HP: {states.pl_hp}      {states.currentEnemy}: {states.enemyHp}")
+        print(f'\n    Tank strikes {states.currentEnemy} for -{hp} HP!')
+
+    def slash():
+        hp = randint((states.swordDam-2),(states.swordDam+2))
+        states.enemyHp -= hp
+        if states.enemyHp < 0:
+            states.enemyHp = 0
+        print(f"    HP: {states.pl_hp}      {states.currentEnemy}: {states.enemyHp}")
+        print(f'\n    Tank slashes {states.currentEnemy} for -{hp} HP!')
+
+    def choice():
+        abilities = [comp_Tank.strike, comp_Tank.slash]
+        random.choice(abilities)()
+
+
+class comp_Wizard():
+
+    def fireball():
+        hp = randint(2,8)
+        states.enemyHp -= hp
+        if states.enemyHp < 0:
+            states.enemyHp = 0
+        print(f"    HP: {states.pl_hp}      {states.currentEnemy}: {states.enemyHp}")
+        print(f'\n    Wizard uses fireball on {states.currentEnemy} for -{hp} HP!')
+
+    def healing():
+        hp = randint(2, 5)
+        states.pl_hp += hp
+        print(f"    HP: {states.pl_hp}      {states.currentEnemy}: {states.enemyHp}")
+        print(f'\n    Wizard heals you +{hp} HP')
+
+    def choice():
+        abilities = [comp_Wizard.fireball, comp_Wizard.healing]
+        random.choice(abilities)()
+
+
+
+## APPEND COMPANION ABILITYIES TO DICT IN STATES
+states.comp_abList['Anne'] = comp_Anne.choice
+states.comp_abList['Tank'] = comp_Tank.choice
+states.comp_abList['Wizard'] = comp_Wizard.choice
+
+
+def writeMaps(wmap):
+    mapx = maps.worldMap.wMap
+
+    #search map for X char and delete it
+    for x in range(len(mapx)):
+        for y in range(len(mapx[0])):
+            if mapx[x][y] == 'X':
+                mapx[x][y] = ' '
+  
+    if wmap == mapOne:
+        mapx[0][0] = '['
+        mapx[0][1] = 'X'
+        mapx[0][2] = ']'
+    elif wmap == mapTwo:
+        mapx[0][3] = '['
+        mapx[0][4] = 'X'
+        mapx[0][5] = ']'
+    elif wmap == mapThree:
+        mapx[0][6] = '['
+        mapx[0][7] = 'X'
+        mapx[0][8] = ']'
+        mapx[1][6] = '['
+        mapx[1][8] = ']'
+
         
 
 def printMap(mapx):
+    print('\n    HP:'+str(states.pl_hp)+'  G:' +str(states.gold))
     for i in range(len(mapx)):
-        print()
+        if i < 1:
+            pass
+        else:
+            print()
         for j in range(len(mapx[0])):
+            if j == 0:
+                print('    ', end='')
+            else:
+                pass
             print(mapx[i][j], end='')
-    print('\n HP:'+str(states.pl_hp)+'  G:' +str(states.gold))
+    print()
+
     
-    
+
+########################
+##   ACTUAL GAMEPLAY  ##    
+########################    
 
 def mapOne():
     mapx = ''
     states.lvlState = 0
+
+    # add to inv.map
+    writeMaps(mapOne) 
     
     while True:
         cls()
@@ -238,6 +332,9 @@ def mapTwo():
     cls()
     mapx = ''
     states.lvlState = 1
+
+    #write to inv.map
+    writeMaps(mapTwo)
     
     while True:
         if states.womanTalkedTo == 0 and states.snakeDef == 0:
@@ -302,6 +399,9 @@ def mapThree():
     cls()
     mapx = ''
     states.lvlState = 2
+
+    #write to inv.map
+    writeMaps(mapThree)
     
     while True:
         # pick map based on enemy defeated or not
@@ -318,7 +418,7 @@ def mapThree():
         if (mapx[mapPos.x+1][mapPos.y+1] == '@' or mapx[mapPos.x][mapPos.y+1] == '@' or mapx[mapPos.x-1][mapPos.y+1] == '@'
         or mapx[mapPos.x-1][mapPos.y-1] == '@' or mapx[mapPos.x+1][mapPos.y-1] == '@'):
             states.currentEnemy = 'SnakeMan'
-            states.enemyHp = 10
+            states.enemyHp = 30
             talkingPerson(faces.snakeMan.face, faces.snakeMan.messages)
             states.snakeDef = 1
             combatState()
@@ -351,6 +451,24 @@ def mapThree():
         elif plMove == '\r' and (mapx[mapPos.x][mapPos.y-1] == '$' or mapx[mapPos.x][mapPos.y+1] == '$'):
             talkingPerson(faces.shopkeeper.face, faces.shopkeeper.messages)
             shop()
+
+        ## TANK COMPANION
+        elif plMove == '\r' and (mapx[mapPos.x][mapPos.y-1] == 'T' or mapx[mapPos.x][mapPos.y+1] == 'T'):
+            talkingPerson(faces.tank.face, faces.tank.messages)
+            print('\n    -Make Tank Your Companion?\n    You Can Only Have One Companion At A Time')
+            print('\n    -slash    -strike')
+            print('\n    [1] Yes\n    [2] No')
+            compAns = getch.getch()
+            ans = bytes.decode(compAns)
+            if ans == '1':
+                states.companion = 'Tank'
+                states.comp_char = 'T'
+            elif ans == '2':
+                states.companion = ''
+                states.comp_ability = None
+                states.comp_char = ''
+            else:
+                pass
         elif plMove == 'p':
             menu()
         cls()
@@ -364,11 +482,32 @@ def houseMap():
         mapx = maps.rewriteHouse(mapx)
         mapx[mapPos.x][mapPos.y] = 'X'
 
+        ### PRINTS COMP CHAR
+        #if states.companion != '':
+            #mapx[mapPos.compx][mapPos.compy] = states.comp_char
         #print map
         printMap(mapx)
 
         plDir = getch.getch()
         plMove = bytes.decode(plDir)
+
+        #companion following 'ai' lol
+        #if states.companion != '':
+        #    if plMove == 'd':
+        #        mapPos.compx = mapPos.x
+        #        mapPos.compy = mapPos.y#-1
+        #    elif plMove == 'a':
+        #        mapPos.compx = mapPos.x
+        #        mapPos.compy = mapPos.y#+1
+        #    elif plMove == 'w':
+        #        mapPos.compx = mapPos.x#-1
+        #        mapPos.compy = mapPos.y
+        #    elif plMove == 's':
+        #        mapPos.compx = mapPos.x#+1
+        #        mapPos.compy = mapPos.y
+
+
+        # pl movement
         if plMove == 'd' and mapx[mapPos.x][mapPos.y+1] != '|' and mapx[mapPos.x][mapPos.y+1] != '#':
             mapPos.y +=2
         elif plMove == 'a' and mapx[mapPos.x][mapPos.y-1] == '[':
@@ -385,6 +524,42 @@ def houseMap():
             if states.pl_hp < 10:
                 states.pl_hp = 10
             talkingPerson(faces.oven.face, faces.oven.messages)
+
+        ## ANNE COMPANION
+        elif plMove == '\r' and (mapx[mapPos.x][mapPos.y-1] == 'A' or mapx[mapPos.x][mapPos.y+1] == 'A'):
+            talkingPerson(faces.anne.face, faces.anne.messages)
+            print('\n    -Make Anne Your Companion?\n    You Can Only Have One Companion At A Time')
+            print('\n    -healing    -spell charging')
+            print('\n    [1] Yes\n    [2] No')
+            compAns = getch.getch()
+            ans = bytes.decode(compAns)
+            if ans == '1':
+                states.companion = 'Anne'
+                states.comp_char = 'A'
+            elif ans == '2':
+                states.companion = ''
+                states.comp_ability = None
+                states.comp_char = ''
+            else:
+                pass
+
+        ## WIZARD COMPANION
+        elif plMove == '\r' and (mapx[mapPos.x][mapPos.y-1] == 'W' or mapx[mapPos.x][mapPos.y+1] == 'W'):
+            talkingPerson(faces.wizard.face, faces.wizard.messages)
+            print('\n    -Make Wizard Your Companion?\n    You Can Only Have One Companion At A Time')
+            print('\n    -fireball    -healing')
+            print('\n    [1] Yes\n    [2] No')
+            compAns = getch.getch()
+            ans = bytes.decode(compAns)
+            if ans == '1':
+                states.companion = 'Wizard'
+                states.comp_char = 'W'
+            elif ans == '2':
+                states.companion = ''
+                states.comp_ability = None
+                states.comp_char = ''
+            else:
+                pass
         elif plMove == 'p':
             menu()
         cls()
@@ -444,9 +619,9 @@ def shop():
                 if confirm == '2':
                     shop()
                 elif confirm == '1':
-                    if itemList[int(choice)-1] == 'Sword dam +2':
+                    if itemList[int(choice)-1] == 'Sword dam +1':
                         states.gold -= itemCost
-                        states.swordDam += 2
+                        states.swordDam += 1
                     elif itemList[int(choice)-1] == 'Minor Amulet':
                         states.gold -= itemCost
                         states.spellList['Minor Amulet']= 1
@@ -474,7 +649,10 @@ def combatState():
     sDmg = states.swordDam
     while (states.enemyHp > 0 and states.pl_hp > 0):
         cls()
-        print(maps.battleZone[0])
+        if states.companion != '':
+            print(maps.battleZone[2])
+        else:
+            print(maps.battleZone[0])
         print(f"    HP: {states.pl_hp}      {states.currentEnemy}: {states.enemyHp}")
         print(f"\n    [1] Sword Attack\n    [2] Spells")
 
@@ -487,19 +665,27 @@ def combatState():
             if states.enemyHp < 0:
                 states.enemyHp = 0
             cls()
-            print(maps.battleZone[0])
+            if states.companion != '':
+                print(maps.battleZone[2])
+            else:
+                print(maps.battleZone[0])
             print(f"    HP: {states.pl_hp}      {states.currentEnemy}: {states.enemyHp}")
             print("\n    -", enemy_dam, " hp to "+states.currentEnemy+"!")
             input()
 
             if (states.enemyHp <= 0):
                 victory()
+            elif states.companion != '':
+                companionAttack()
             else:
                 enemyAttack()
 
         elif (ans == '2'):
             cls()
-            print(maps.battleZone[0])
+            if states.companion != '':
+                print(maps.battleZone[2])
+            else:
+                print(maps.battleZone[0])
             print(f"    HP: {states.pl_hp}      {states.currentEnemy}: {states.enemyHp}")
             print('\n'+'--SPELLS--'.center(28, ' ')+'\n')
             i = 1
@@ -513,7 +699,7 @@ def combatState():
                 spellChar = getch.getch()
                 spell = bytes.decode(spellChar)
                 if spellList[int(spell)-1] == 'Back':
-                    victory()
+                    continue
                 else:
                     # check if player is out of spell
                     num = states.spellList.get(spellList[int(spell)-1])
@@ -522,75 +708,74 @@ def combatState():
                         input()
                     else:
                         cls()
-                        print(maps.battleZone[0])
-
-                        # Fireball
-                        if spellList[int(spell)-1] == 'Fireball':
-                            fireDam = randint(3,7)
-                            states.enemyHp -= fireDam
-                            if states.enemyHp < 0:
-                                states.enemyHp = 0
-                            print(f"    HP: {states.pl_hp}      {states.currentEnemy}: {states.enemyHp}")
-                            print(f'\n    You Use {spellList[int(spell)-1]}! -{fireDam} HP to {states.currentEnemy}')
-                            states.spellList[spellList[int(spell)-1]] -= 1
-                            input()
-                            if states.enemyHp > 0:
-                                enemyAttack()
-                            else:
-                                victory()
-                                
+                        if states.companion != '':
+                            print(maps.battleZone[2])
+                        else:
+                            print(maps.battleZone[0])
                         # Healing
-                        elif spellList[int(spell)-1] == 'Healing':
+                        if spellList[int(spell)-1] == 'Healing':
                             healing = randint(2,6)
                             states.pl_hp += healing
                             print(f"    HP: {states.pl_hp}      {states.currentEnemy}: {states.enemyHp}")
                             print(f'\n    You Use Healing! +{healing}HP')
                             states.spellList[spellList[int(spell)-1]] -= 1
                             input()
-                            enemyAttack()
-
-                        # Thunder Strike
-                        elif spellList[int(spell)-1] == 'ThunderStrike':
-                            states.enemyHp -= 10
+                            if states.companion != '':
+                                companionAttack()
+                            else:
+                                enemyAttack()
+                        # Damage Spells
+                        else:
+                            damage = 0
+                            if spellList[int(spell)-1] == 'Fireball':
+                                damage = randint(3,7)
+                            elif spellList[int(spell)-1] == 'ThunderStrike':
+                                damage = 10
+                            elif spellList[int(spell)-1] == 'Minor Amulet':
+                                damage = randint(5,10)
+                            states.enemyHp -= damage
                             if states.enemyHp < 0:
                                 states.enemyHp = 0
                             print(f"    HP: {states.pl_hp}      {states.currentEnemy}: {states.enemyHp}")
-                            print(f'\n    You Use ThunderStrike! -10 HP to {states.currentEnemy}')
+                            print(f'\n    You Use {spellList[int(spell)-1]}! -{damage} HP to {states.currentEnemy}')
                             states.spellList[spellList[int(spell)-1]] -= 1
                             input()
-                            if states.enemyHp > 0:
-                                enemyAttack()
-                            else:
+                            if states.enemyHp <= 0:
                                 victory()
-
-                        # Minor Amulet
-                        elif spellList[int(spell)-1] == 'Minor Amulet':
-                            amuletDam = randint(5, 10)
-                            states.enemyHp -= amuletDam
-                            if states.enemyHp < 0:
-                                states.enemyHp = 0
-                            print(f"    HP: {states.pl_hp}      {states.currentEnemy}: {states.enemyHp}")
-                            print(f'\n    You Use Minor Amulet!\n     -'+str(amuletDam)+f' HP to {states.currentEnemy}')
-                            states.spellList[spellList[int(spell)-1]] -= 1
-                            input()
-                            if states.enemyHp > 0:
-                                enemyAttack()
+                            elif states.companion != '':
+                                companionAttack()
                             else:
-                                victory()
-
-                        
+                                enemyAttack()
+                                
+                                                
             except ValueError:
                 print('\n'+'    -Invalid Option-')
                 input()
 
-        
+
+                
+def companionAttack():
+    cls()
+    print(maps.battleZone[3])
+    states.comp_abList[states.companion]()
+    input()
+    if states.enemyHp == 0:
+        victory()
+    else:
+        enemyAttack()
+
+                                  
+
 def enemyAttack():
     cls()
     play_dam = randint(1,3)
     states.pl_hp -= play_dam
     if states.pl_hp < 0:
         states.pl_hp = 0
-    print(maps.battleZone[1])
+    if states.companion != '':
+        print(maps.battleZone[4])
+    else:
+        print(maps.battleZone[1])
     print(f"    HP: {states.pl_hp}      {states.currentEnemy}: {states.enemyHp}")
     print(f'\n    {states.currentEnemy} attacks! -{play_dam} HP')
     input()
@@ -605,7 +790,10 @@ def enemyAttack():
 
 def victory():
     cls()
-    print(maps.battleZone[0])
+    if states.companion != '':
+        print(maps.battleZone[4])
+    else:
+        print(maps.battleZone[1])
     print(f"    HP: {states.pl_hp}      {states.currentEnemy}: {states.enemyHp}")
     print('\n        ---You Won!---')
     input()
@@ -638,12 +826,14 @@ class Game_Status(object):
             Game_Status.save_load()
     
     def save():
-        # SAVE ORDER: xpos, ypos, map, hp, gold, magicka, swordDam, spells, shopitems, woman state, snakedef
+        # SAVE ORDER: xpos, ypos, map, hp, gold, magicka, map, swordDam, companionN, compchar,
+        #             spells, shopitems, woman state, snakedef
         save_xpos = str(mapPos.x) ; save_ypos = str(mapPos.y) ; save_Map = str(states.lvlState)
         save_hp = str(states.pl_hp) ; save_gold = str(states.gold) ; save_magicka = str(states.magicka)
-        save_swordDam = str(states.swordDam) ; save_spells = str(states.spellList)
-        save_shopItems = str(states.shop_items) ; save_womanState = str(states.womanTalkedTo)
-        save_snakeDef = str(states.snakeDef)
+        save_map = str(maps.worldMap.wMap) ; save_swordDam = str(states.swordDam)
+        save_companionName = states.companion ; save_compChar = states.comp_char
+        save_spells = str(states.spellList) ; save_shopItems = str(states.shop_items)
+        save_womanState = str(states.womanTalkedTo) ; save_snakeDef = str(states.snakeDef)
 
         cls()
         saveFiles = []
@@ -657,7 +847,6 @@ class Game_Status(object):
             print('    ['+str(i)+'] '+file)
             i +=1
         print('\n    ['+str(i)+'] Back')
-        
 
         fileChoice = getch.getch()
         file = bytes.decode(fileChoice)
@@ -685,18 +874,19 @@ class Game_Status(object):
                 try:
                     openfile = open(saveFiles[int(file)-2], 'w+')
                 except (ValueError, IndexError):
-                    #print('\n    NOT A VALID OPTION')
-                    #print('\n    [enter]')
-                    #input()
                     Game_Status.save()            
             # do tha savin
-            # SAVE ORDER: xpos, ypos, map, hp, gold, magicka, swordDam, spells, shopitems, woman state, snakedef
+            # SAVE ORDER: xpos, ypos, map, hp, gold, magicka, map, swordDam, companionN, compchar,
+            #             spells, shopitems, woman state, snakedef
             openfile.truncate()
             openfile.write(save_xpos); openfile.write("\n"); openfile.write(save_ypos)
             openfile.write("\n"); openfile.write(save_Map) ; openfile.write("\n")
             openfile.write(save_hp) ; openfile.write("\n") ; openfile.write(save_gold)
             openfile.write("\n") ; openfile.write(save_magicka) ; openfile.write("\n")
-            openfile.write(save_swordDam) ; openfile.write("\n") ; openfile.write(save_spells)
+            openfile.write(save_map) ; openfile.write('\n') ; openfile.write(save_swordDam)
+            openfile.write('\n') ; openfile.write(save_companionName)
+            openfile.write('\n') ; openfile.write(save_compChar)
+            openfile.write("\n") ; openfile.write(save_spells)
             openfile.write("\n") ; openfile.write(save_shopItems); openfile.write("\n")
             openfile.write(save_womanState) ; openfile.write("\n") ; openfile.write(save_snakeDef)
             openfile.write("\n") ; openfile.close()
@@ -728,17 +918,17 @@ class Game_Status(object):
             try:
                 load_file = open(saveFiles[int(file)-1])
             except (ValueError, IndexError):
-                #print('\n    NOT A VALID OPTION')
-                #print('\n    [enter]')
-                #input()
                 Game_Status.load()
             
             try:
-                # SAVE ORDER: xpos, ypos, map, hp, gold, magicka, swordDam, spells, shopitems, woman state, snakedef
+                # SAVE ORDER: xpos, ypos, map, hp, gold, magicka, map, swordDam, companionN, compchar,
+                #             spells, shopitems, woman state, snakedef
                 load_xpos = int(load_file.readline()) ; load_ypos = int(load_file.readline())
                 load_Map = int(load_file.readline()) ; load_hp = int(load_file.readline())
                 load_gold = int(load_file.readline()) ; load_magicka = int(load_file.readline())
-                load_swordDam = int(load_file.readline()) ; load_spells = load_file.readline()
+                load_map = load_file.readline() ; load_swordDam = int(load_file.readline())
+                load_companion = load_file.readline() 
+                load_compChar = load_file.readline() ; load_spells = load_file.readline()
                 load_shopItems = load_file.readline() ; load_womanState = int(load_file.readline())
                 load_snakedef = int(load_file.readline()) ; load_file.close()
                 
@@ -749,7 +939,14 @@ class Game_Status(object):
                 states.pl_hp = load_hp
                 states.gold = load_gold
                 states.magicka = load_magicka
+                maps.worldMap.wMap = ast.literal_eval(load_map)
                 states.swordDam = load_swordDam
+                #companion name
+                if load_companion == '\n':
+                    states.companion = ''
+                else:
+                    states.companion = load_companion.rstrip('\n')
+                states.comp_char = load_compChar
                 states.spellList = ast.literal_eval(load_spells)
                 states.shop_items = ast.literal_eval(load_shopItems)
                 states.womanTalkedTo = load_womanState
