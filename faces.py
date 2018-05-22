@@ -171,6 +171,9 @@ class anne():
     messages = ['Hey, need an aly?', 'I\'ll help you fight if you need.',
                 'Just say the word, and I\'ll be there to aid you.']
 
+    comp_messages = ['Yes? What is it?',
+                     'Just let me know when the next fight is.',
+                     'I\'m not one for waiting around.']
 
 class wizard():
     face = [('''
@@ -201,6 +204,11 @@ class wizard():
                 'Need the assistance of a wizard?',
                 'I\'m quite adept at sorcery and healing!']
 
+    comp_messages = ['What is it, friend?',
+                     'You\'re quite the fighter.',
+                     'Let\'s not rest long, though-',
+                     'There is always danger afoot!']
+
 
 class tank():
     face = [('''
@@ -226,3 +234,34 @@ class tank():
     messages = ['Ho, looking for might?',
                 'Let me take arms with you, adventurer!',
                 'Come, we have many to crush!']
+
+    comp_messages = ['Ho, friend.',
+                     'How are you doing?',
+                     'I\'m glad to have you as my ally!',
+                     'Now lets move! I\'ll follow you!']
+
+
+class king():
+    face = [('''
+            |_|_|_|_|_|
+            | ... ... |
+           C|  O   O  |D
+            |.   C   .|
+            |../===\\..|
+            |.........|
+    ___________________________
+    '''),
+    ('''
+            |_|_|_|_|_|
+            | ... ... |
+           C|  -   -  |D
+            |.   C   .|
+            |../===\\..|
+            |.........|
+    ___________________________
+    ''')
+    ]
+
+    messages = ['You come to my kingdom and kill my snake!',
+                'Well now, traveler, you shall pay!',
+                'WITH YOUR BLOOD!']

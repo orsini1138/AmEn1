@@ -1,17 +1,14 @@
 # game.py - AmEn1 demo
 
-### TODO:
-### - try and put map() calls in another file so that this file is purely functional
-
-### - work out either companion ai following, or have companion just on each map somewhere
-### wtf is that ai on ln375 lol figure it out or get rid of it
-
-### - make alternate messages if companion is True and you try and talk to them
-
 import sys, os, textwrap, random, time, ast
 import msvcrt as getch
 from random import randint
 import faces, maps
+
+
+############################
+##   TOOLS/MENUS/STATES   ##
+############################
 
 def cls():
     os.system('CLS')
@@ -28,19 +25,28 @@ class states():
 
     companion = ''
     comp_abList = {}
-    comp_char = ''
+    comp_char = ' '
     
     currentEnemy= ''
     enemyHp = 0
+    enemyBaseDam = 0
 
     #map 1 states
 
     #map 2 states
     womanTalkedTo = 0
+    womanQuest = '!'
     
     #map 3 states
     snakeDef = 0
+    tank_char = 'T'
+
+    # map 4 states
+    kingDef = 0
     
+    #map house states
+    anne_char = 'A'
+    wizard_char = 'W'
 
 
 def returnMap():
@@ -52,6 +58,8 @@ def returnMap():
         return mapThree()
     elif states.lvlState == 3:
         return houseMap()
+    elif states.lvlState == 4:
+        return mapFour()
 
 
 def menu():
@@ -93,7 +101,7 @@ class mapPos():
     compy = 1
 
     walkables = ['.', ' ']
-    walls = ['|', '#', 'M', '^', '_',  '-', 'Q', '@', 'A', 'W', 'T']
+    walls = ['|', '#', 'M', '^', '_',  '-', 'Q', '@', 'A', 'W', 'T', '\\', '/']
 
 
 def inventory():
@@ -263,8 +271,10 @@ def writeMaps(wmap):
         mapx[0][6] = '['
         mapx[0][7] = 'X'
         mapx[0][8] = ']'
+    elif wmap == mapFour:
         mapx[1][6] = '['
         mapx[1][8] = ']'
+
 
         
 
@@ -298,7 +308,7 @@ def mapOne():
     
     while True:
         cls()
-        mapx = maps.rewriteMapOne(mapx)
+        mapx = maps.rewriteMapOne(mapx, states.comp_char)
         mapx[mapPos.x][mapPos.y] = 'X'
 
         #print map
@@ -320,9 +330,19 @@ def mapOne():
         elif plMove == 'w' and mapx[mapPos.x-1][mapPos.y] not in mapPos.walls:
             mapPos.x -=1
         elif plMove == 's' and mapx[mapPos.x+1][mapPos.y] not in mapPos.walls:
-            mapPos.x +=1
+            mapPos.x +=1   
         elif plMove == '\r' and (mapx[mapPos.x+1][mapPos.y] == 'M' or mapx[mapPos.x][mapPos.y-1] == 'M' or mapx[mapPos.x][mapPos.y+1] == 'M'):
             talkingPerson(faces.man.face, faces.man.messages)
+
+        #Companion CONVO
+        elif plMove == '\r' and (mapx[mapPos.x][mapPos.y-1] == 'A' or mapx[mapPos.x][mapPos.y+1] == 'A'):
+            talkingPerson(faces.anne.face, faces.anne.comp_messages)
+        elif plMove == '\r' and (mapx[mapPos.x][mapPos.y-1] == 'W' or mapx[mapPos.x][mapPos.y+1] == 'W'):
+            talkingPerson(faces.wizard.face, faces.wizard.comp_messages)
+        elif plMove == '\r' and (mapx[mapPos.x][mapPos.y-1] == 'T' or mapx[mapPos.x][mapPos.y+1] == 'T'):
+            talkingPerson(faces.tank.face, faces.tank.comp_messages)
+        
+        # menu
         elif plMove == 'p':
             menu()
         cls()
@@ -337,10 +357,7 @@ def mapTwo():
     writeMaps(mapTwo)
     
     while True:
-        if states.womanTalkedTo == 0 and states.snakeDef == 0:
-            mapx = maps.rewriteMapTwoQuest(mapx)
-        else: # states.womanTalkedTo == 1:
-            mapx = maps.rewriteMapTwo(mapx)
+        mapx = maps.rewriteMapTwo(mapx, states.comp_char,states.womanQuest)
         mapx[mapPos.x][mapPos.y] = 'X'
 
         #print map
@@ -375,20 +392,32 @@ def mapTwo():
                 print('\tHere\'s some dough, boiii!')
                 states.gold += 5
             input()
-            mapTwo()
-            
+            mapTwo()    
         elif plMove == 's' and mapx[mapPos.x+1][mapPos.y] not in mapPos.walls:
             mapPos.x +=1
-        elif plMove == '\r' and (mapx[mapPos.x-1][mapPos.y] == 'Q' or mapx[mapPos.x][mapPos.y-1] == 'Q' or mapx[mapPos.x][mapPos.y+1] == 'Q'):
+
+        #Companion CONVO
+        elif plMove == '\r' and (mapx[mapPos.x][mapPos.y-1] == 'A' or mapx[mapPos.x][mapPos.y+1] == 'A'):
+            talkingPerson(faces.anne.face, faces.anne.comp_messages)
+        elif plMove == '\r' and (mapx[mapPos.x][mapPos.y-1] == 'W' or mapx[mapPos.x][mapPos.y+1] == 'W'):
+            talkingPerson(faces.wizard.face, faces.wizard.comp_messages)
+        elif plMove == '\r' and (mapx[mapPos.x][mapPos.y-1] == 'T' or mapx[mapPos.x][mapPos.y+1] == 'T'):
+            talkingPerson(faces.tank.face, faces.tank.comp_messages)
+
+
+        elif plMove == '\r' and (mapx[mapPos.x-1][mapPos.y] == ('Q' or 'W' or 'A' or 'T') or mapx[mapPos.x][mapPos.y-1] == ('Q' or 'W' or 'A' or 'T') or mapx[mapPos.x][mapPos.y+1] == ('Q' or 'W' or 'A' or 'T')):
             if states.snakeDef == 1:
+                states.womanQuest = '_'
                 talkingPerson(faces.girl.face, faces.girl.messages3)
                 if states.womanTalkedTo < 2:
                     states.gold += 5
-                    states.womanTalkedTo =2    
+                    states.womanTalkedTo =2   
             elif states.womanTalkedTo == 0:
                 talkingPerson(faces.girl.face, faces.girl.messages)
                 states.womanTalkedTo = 1
+                states.womanQuest = '_'
             elif states.womanTalkedTo == 1 and states.snakeDef == 0:
+                states.womanQuest = '_'
                 talkingPerson(faces.girl.face, faces.girl.messages2)
 
         elif plMove == 'p':
@@ -405,10 +434,15 @@ def mapThree():
     
     while True:
         # pick map based on enemy defeated or not
+        if states.companion == 'Tank':
+            states.tank_char = ' '
+        else:
+            states.tank_char = 'T'
+
         if states.snakeDef == 0:
-            mapx = maps.rewriteMapThree(mapx)
+            mapx = maps.rewriteMapThree(mapx, states.comp_char, states.tank_char)
         elif states.snakeDef == 1:
-            mapx = maps.rewriteMapThreeVictory(mapx)
+            mapx = maps.rewriteMapThreeVictory(mapx, states.comp_char, states.tank_char)
         mapx[mapPos.x][mapPos.y] = 'X'
 
         #print map
@@ -418,7 +452,8 @@ def mapThree():
         if (mapx[mapPos.x+1][mapPos.y+1] == '@' or mapx[mapPos.x][mapPos.y+1] == '@' or mapx[mapPos.x-1][mapPos.y+1] == '@'
         or mapx[mapPos.x-1][mapPos.y-1] == '@' or mapx[mapPos.x+1][mapPos.y-1] == '@'):
             states.currentEnemy = 'SnakeMan'
-            states.enemyHp = 30
+            states.enemyHp = 100
+            states.enemyBaseDam = 1
             talkingPerson(faces.snakeMan.face, faces.snakeMan.messages)
             states.snakeDef = 1
             combatState()
@@ -437,14 +472,11 @@ def mapThree():
             mapPos.y -=2
         elif plMove == 'w' and mapx[mapPos.x-1][mapPos.y] not in mapPos.walls:
             mapPos.x -=1
-        # secret room
-        elif plMove == 's' and mapx[mapPos.x+1][mapPos.y] == '-':
-            cls()
-            print('SECRET ROOM YEAH BOIIII')
-            input()
-            mapPos.x = 7
+        # room 4
+        elif plMove == 's' and mapx[mapPos.x+1][mapPos.y] == '=':
+            mapPos.x = 1
             mapPos.y = 7
-            mapThree()
+            mapFour()
             
         elif plMove == 's' and mapx[mapPos.x+1][mapPos.y] not in mapPos.walls:
             mapPos.x +=1
@@ -452,26 +484,33 @@ def mapThree():
             talkingPerson(faces.shopkeeper.face, faces.shopkeeper.messages)
             shop()
 
+        #Companion CONVO
+        elif plMove == '\r' and (mapx[mapPos.x][mapPos.y-1] == 'A' or mapx[mapPos.x][mapPos.y+1] == 'A'):
+            talkingPerson(faces.anne.face, faces.anne.comp_messages)
+        elif plMove == '\r' and (mapx[mapPos.x][mapPos.y-1] == 'W' or mapx[mapPos.x][mapPos.y+1] == 'W'):
+            talkingPerson(faces.wizard.face, faces.wizard.comp_messages)
+
         ## TANK COMPANION
         elif plMove == '\r' and (mapx[mapPos.x][mapPos.y-1] == 'T' or mapx[mapPos.x][mapPos.y+1] == 'T'):
-            talkingPerson(faces.tank.face, faces.tank.messages)
-            print('\n    -Make Tank Your Companion?\n    You Can Only Have One Companion At A Time')
-            print('\n    -slash    -strike')
-            print('\n    [1] Yes\n    [2] No')
-            compAns = getch.getch()
-            ans = bytes.decode(compAns)
-            if ans == '1':
-                states.companion = 'Tank'
-                states.comp_char = 'T'
-            elif ans == '2':
-                states.companion = ''
-                states.comp_ability = None
-                states.comp_char = ''
+            if states.companion != 'Tank':
+                talkingPerson(faces.tank.face, faces.tank.messages)
+                print('\n    -Make Tank Your Companion?\n    You Can Only Have One Companion At A Time')
+                print('\n    -slash    -strike')
+                print('\n    [1] Yes\n    [2] No')
+                compAns = getch.getch()
+                ans = bytes.decode(compAns)
+                if ans == '1':
+                    states.companion = 'Tank'
+                    states.comp_char = 'T'
+                else:
+                    pass
             else:
-                pass
+                talkingPerson(faces.tank.face, faces.tank.comp_messages)
         elif plMove == 'p':
             menu()
         cls()
+
+
 
 def houseMap():
     cls()
@@ -479,34 +518,24 @@ def houseMap():
     states.lvlState = 3
 
     while True:
-        mapx = maps.rewriteHouse(mapx)
+        if states.companion == 'Anne':
+            states.anne_char = ' '
+            states.wizard_char = 'W'
+        elif states.companion == 'Wizard':
+            states.wizard_char = ' '
+            states.anne_char = 'A'
+        elif states.companion == 'Tank':
+            states.anne_char = 'A'
+            states.wizard_char = 'W'
+        mapx = maps.rewriteHouse(mapx, states.comp_char, states.anne_char, states.wizard_char)
         mapx[mapPos.x][mapPos.y] = 'X'
 
-        ### PRINTS COMP CHAR
-        #if states.companion != '':
-            #mapx[mapPos.compx][mapPos.compy] = states.comp_char
-        #print map
+
         printMap(mapx)
+
 
         plDir = getch.getch()
         plMove = bytes.decode(plDir)
-
-        #companion following 'ai' lol
-        #if states.companion != '':
-        #    if plMove == 'd':
-        #        mapPos.compx = mapPos.x
-        #        mapPos.compy = mapPos.y#-1
-        #    elif plMove == 'a':
-        #        mapPos.compx = mapPos.x
-        #        mapPos.compy = mapPos.y#+1
-        #    elif plMove == 'w':
-        #        mapPos.compx = mapPos.x#-1
-        #        mapPos.compy = mapPos.y
-        #    elif plMove == 's':
-        #        mapPos.compx = mapPos.x#+1
-        #        mapPos.compy = mapPos.y
-
-
         # pl movement
         if plMove == 'd' and mapx[mapPos.x][mapPos.y+1] != '|' and mapx[mapPos.x][mapPos.y+1] != '#':
             mapPos.y +=2
@@ -525,44 +554,122 @@ def houseMap():
                 states.pl_hp = 10
             talkingPerson(faces.oven.face, faces.oven.messages)
 
+        #Companion CONVO
+        elif plMove == '\r' and (mapx[mapPos.x][mapPos.y-1] == 'T' or mapx[mapPos.x][mapPos.y+1] == 'T'):
+            talkingPerson(faces.tank.face, faces.tank.comp_messages)
+
         ## ANNE COMPANION
         elif plMove == '\r' and (mapx[mapPos.x][mapPos.y-1] == 'A' or mapx[mapPos.x][mapPos.y+1] == 'A'):
-            talkingPerson(faces.anne.face, faces.anne.messages)
-            print('\n    -Make Anne Your Companion?\n    You Can Only Have One Companion At A Time')
-            print('\n    -healing    -spell charging')
-            print('\n    [1] Yes\n    [2] No')
-            compAns = getch.getch()
-            ans = bytes.decode(compAns)
-            if ans == '1':
-                states.companion = 'Anne'
-                states.comp_char = 'A'
-            elif ans == '2':
-                states.companion = ''
-                states.comp_ability = None
-                states.comp_char = ''
+            if states.companion != 'Anne':
+                talkingPerson(faces.anne.face, faces.anne.messages)
+                print('\n    -Make Anne Your Companion?\n    You Can Only Have One Companion At A Time')
+                print('\n    -healing    -spell charging')
+                print('\n    [1] Yes\n    [2] No')
+                compAns = getch.getch()
+                ans = bytes.decode(compAns)
+                if ans == '1':
+                    states.companion = 'Anne'
+                    states.comp_char = 'A'
+                else:
+                    pass
             else:
-                pass
+                talkingPerson(faces.anne.face, faces.anne.comp_messages)
 
         ## WIZARD COMPANION
         elif plMove == '\r' and (mapx[mapPos.x][mapPos.y-1] == 'W' or mapx[mapPos.x][mapPos.y+1] == 'W'):
-            talkingPerson(faces.wizard.face, faces.wizard.messages)
-            print('\n    -Make Wizard Your Companion?\n    You Can Only Have One Companion At A Time')
-            print('\n    -fireball    -healing')
-            print('\n    [1] Yes\n    [2] No')
-            compAns = getch.getch()
-            ans = bytes.decode(compAns)
-            if ans == '1':
-                states.companion = 'Wizard'
-                states.comp_char = 'W'
-            elif ans == '2':
-                states.companion = ''
-                states.comp_ability = None
-                states.comp_char = ''
+            if states.companion != 'Wizard':
+                talkingPerson(faces.wizard.face, faces.wizard.messages)
+                print('\n    -Make Wizard Your Companion?\n    You Can Only Have One Companion At A Time')
+                print('\n    -fireball    -healing')
+                print('\n    [1] Yes\n    [2] No')
+                compAns = getch.getch()
+                ans = bytes.decode(compAns)
+                if ans == '1':
+                    states.companion = 'Wizard'
+                    states.comp_char = 'W'
+                else:
+                    pass
             else:
-                pass
+                talkingPerson(faces.wizard.face, faces.wizard.comp_messages)
         elif plMove == 'p':
             menu()
         cls()
+
+
+
+def mapFour():
+    cls()
+    mapx = ''
+    states.lvlState = 4
+
+    writeMaps(mapFour)
+
+    while True:
+        if states.kingDef == 0:
+            mapx = maps.rewriteMapFour(mapx, states.comp_char)
+        elif states.kingDef == 1:
+            mapx = maps.rewriteMapFourVictory(mapx, states.comp_char)
+        mapx[mapPos.x][mapPos.y] = 'X'
+
+        #print map
+        printMap(mapx)
+    
+        # combat initiation by proximity here
+        if mapx[mapPos.x-1][mapPos.y] == '@':
+            states.currentEnemy = 'the King'
+            states.enemyHp = 45
+            states.enemyBaseDam = 4
+            talkingPerson(faces.king.face, faces.king.messages)
+            states.kingDef = 1
+            combatState()
+            mapFour()
+        
+        #player input
+        plDir = getch.getch()
+        plMove = bytes.decode(plDir)
+        if plMove == 'd' and mapx[mapPos.x][mapPos.y+1] not in mapPos.walls:
+            mapPos.y +=2
+        elif plMove == 'a' and mapx[mapPos.x][mapPos.y-1] not in mapPos.walls:
+            mapPos.y -=2
+        # to map3
+        elif plMove == 'w' and mapx[mapPos.x-1][mapPos.y] == '=':
+            mapPos.x = 7
+            mapPos.y = 7
+            mapThree()
+        elif plMove == 'w' and (mapPos.x == 8 and mapPos.y == 5): 
+            cls()
+            print('\n    YOU WIN CONGRATS')
+            states.gold += 1000
+            input()
+            mapFour()
+        elif plMove == 'w' and mapx[mapPos.x-1][mapPos.y] not in mapPos.walls:
+            mapPos.x -=1
+        elif plMove == 's' and mapx[mapPos.x+1][mapPos.y] not in mapPos.walls:
+            mapPos.x +=1
+
+        # SHOP
+        elif plMove == '\r' and mapx[mapPos.x][mapPos.y+1] == '$':
+            talkingPerson(faces.shopkeeper.face, faces.shopkeeper.messages)
+            shop()
+
+        #Companion CONVO
+        elif plMove == '\r' and (mapx[mapPos.x][mapPos.y-1] == 'A' or mapx[mapPos.x][mapPos.y+1] == 'A'):
+            talkingPerson(faces.anne.face, faces.anne.comp_messages)
+        elif plMove == '\r' and (mapx[mapPos.x][mapPos.y-1] == 'W' or mapx[mapPos.x][mapPos.y+1] == 'W'):
+            talkingPerson(faces.wizard.face, faces.wizard.comp_messages)
+        elif plMove == '\r' and (mapx[mapPos.x][mapPos.y-1] == 'T' or mapx[mapPos.x][mapPos.y+1] == 'T'):
+            talkingPerson(faces.tank.face, faces.tank.comp_messages)
+
+        # menu
+        elif plMove == 'p':
+            menu()
+        cls()
+
+
+
+  #########################
+ ####  TALKING/SHOPS  ####
+########################
 
 
 def talkingPerson(fc, ms):  #(face, messages)
@@ -768,7 +875,7 @@ def companionAttack():
 
 def enemyAttack():
     cls()
-    play_dam = randint(1,3)
+    play_dam = randint(states.enemyBaseDam, states.enemyBaseDam+4)
     states.pl_hp -= play_dam
     if states.pl_hp < 0:
         states.pl_hp = 0
@@ -827,13 +934,15 @@ class Game_Status(object):
     
     def save():
         # SAVE ORDER: xpos, ypos, map, hp, gold, magicka, map, swordDam, companionN, compchar,
-        #             spells, shopitems, woman state, snakedef
+        #             spells, shopitems, compAnne, comptank, compwizard woman state, womanQuest snakedef, kingdef
         save_xpos = str(mapPos.x) ; save_ypos = str(mapPos.y) ; save_Map = str(states.lvlState)
         save_hp = str(states.pl_hp) ; save_gold = str(states.gold) ; save_magicka = str(states.magicka)
         save_map = str(maps.worldMap.wMap) ; save_swordDam = str(states.swordDam)
         save_companionName = states.companion ; save_compChar = states.comp_char
         save_spells = str(states.spellList) ; save_shopItems = str(states.shop_items)
-        save_womanState = str(states.womanTalkedTo) ; save_snakeDef = str(states.snakeDef)
+        save_anne = states.anne_char ; save_tank = states.tank_char ; save_wizard = states.wizard_char
+        save_womanState = str(states.womanTalkedTo) ; save_womanQuest = states.womanQuest
+        save_snakeDef = str(states.snakeDef) ; save_kingDef = str(states.kingDef)
 
         cls()
         saveFiles = []
@@ -877,7 +986,7 @@ class Game_Status(object):
                     Game_Status.save()            
             # do tha savin
             # SAVE ORDER: xpos, ypos, map, hp, gold, magicka, map, swordDam, companionN, compchar,
-            #             spells, shopitems, woman state, snakedef
+        #             spells, shopitems, compAnne, comptank, compwizard woman state, womanQuest snakedef, kingdef
             openfile.truncate()
             openfile.write(save_xpos); openfile.write("\n"); openfile.write(save_ypos)
             openfile.write("\n"); openfile.write(save_Map) ; openfile.write("\n")
@@ -888,8 +997,11 @@ class Game_Status(object):
             openfile.write('\n') ; openfile.write(save_compChar)
             openfile.write("\n") ; openfile.write(save_spells)
             openfile.write("\n") ; openfile.write(save_shopItems); openfile.write("\n")
-            openfile.write(save_womanState) ; openfile.write("\n") ; openfile.write(save_snakeDef)
-            openfile.write("\n") ; openfile.close()
+            openfile.write(save_anne) ; openfile.write("\n") ; openfile.write(save_tank)
+            openfile.write("\n") ; openfile.write(save_wizard) ; openfile.write("\n")
+            openfile.write(save_womanState) ; openfile.write("\n") ; openfile.write(save_womanQuest)
+            openfile.write("\n") ; openfile.write(save_snakeDef) ; openfile.write("\n")
+            openfile.write(save_kingDef) ; openfile.write("\n") ; openfile.close()
 
             print('\n    Game Saved')
             input('\n    [enter]')
@@ -922,15 +1034,18 @@ class Game_Status(object):
             
             try:
                 # SAVE ORDER: xpos, ypos, map, hp, gold, magicka, map, swordDam, companionN, compchar,
-                #             spells, shopitems, woman state, snakedef
+        #             spells, shopitems, compAnne, comptank, compwizard woman state, womanQuest snakedef, kingdef
                 load_xpos = int(load_file.readline()) ; load_ypos = int(load_file.readline())
                 load_Map = int(load_file.readline()) ; load_hp = int(load_file.readline())
                 load_gold = int(load_file.readline()) ; load_magicka = int(load_file.readline())
                 load_map = load_file.readline() ; load_swordDam = int(load_file.readline())
                 load_companion = load_file.readline() 
                 load_compChar = load_file.readline() ; load_spells = load_file.readline()
-                load_shopItems = load_file.readline() ; load_womanState = int(load_file.readline())
-                load_snakedef = int(load_file.readline()) ; load_file.close()
+                load_shopItems = load_file.readline() ; load_anne = load_file.readline()
+                load_tank = load_file.readline() ; load_wizard = load_file.readline()
+                load_womanState = int(load_file.readline()) ; load_womanQuest = load_file.readline()
+                load_snakedef = int(load_file.readline()) ; load_kingDef = int(load_file.readline())
+                load_file.close()
                 
                 #World_Stats.pl_name = load_name.rstrip('\n')    #rstrip to remove 'n' so that player name isnt indented a line when they load the game
                 mapPos.x = load_xpos
@@ -946,11 +1061,16 @@ class Game_Status(object):
                     states.companion = ''
                 else:
                     states.companion = load_companion.rstrip('\n')
-                states.comp_char = load_compChar
+                states.comp_char = load_compChar.rstrip('\n')
                 states.spellList = ast.literal_eval(load_spells)
                 states.shop_items = ast.literal_eval(load_shopItems)
+                states.anne_char = load_anne.rstrip('\n')
+                states.tank_char = load_tank.rstrip('\n')
+                states.wizard_char = load_wizard.rstrip('\n')
                 states.womanTalkedTo = load_womanState
+                states.womanQuest = load_womanQuest.rstrip('\n')
                 states.snakeDef = load_snakedef
+                states.kingDef = load_kingDef
                 
                 print("\n    Game Loaded.\n")
                 input('    [enter]')
